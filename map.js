@@ -21,15 +21,15 @@ const ZOOM_TO_H3_RES_CORRESPONDENCE = {
     6: 2,
     7: 3,
     8: 3,
-    9: 4,
-    10: 5,
-    11: 6,
-    12: 6,
+    9: 7,
+    10: 7,
+    11: 7,
+    12: 7,
     13: 7,
-    14: 8,
-    15: 9,
-    16: 9,
-    17: 10,
+    14: 7,
+    15: 7,
+    16: 7,
+    17: 7,
     18: 10,
     19: 11,
     20: 11,
@@ -84,7 +84,7 @@ var app = new Vue({
     data: {
         searchH3Id: undefined,
         gotoLatLon: undefined,
-        currentH3Res: undefined,
+        currentH3Res: 7,
 
     },
 
@@ -134,7 +134,7 @@ var app = new Vue({
 
                 const isSelected = h3id === this.searchH3Id;
 
-                const style = isSelected ? { fillColor: "orange" } : {};
+                const style = isSelected ? { fillColor: "red" } : {};
 
                 const h3Bounds = h3.cellToBoundary(h3id);
                 const averageEdgeLength = this.computeAverageEdgeLengthInMeters(h3Bounds);
@@ -158,7 +158,7 @@ var app = new Vue({
                     var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
                     svgElement.setAttribute('xmlns', "http://www.w3.org/2000/svg");
                     svgElement.setAttribute('viewBox', "0 0 200 200");
-                    svgElement.innerHTML = `<text x="20" y="70" class="h3Text">${h3id}</text>`;
+                    svgElement.innerHTML = `<text x="19" y="75" class="h3Text">${h3id}</text>`;
                     var svgElementBounds = h3Polygon.getBounds();
                     L.svgOverlay(svgElement, svgElementBounds).addTo(polygonLayer);
                 }
@@ -166,11 +166,23 @@ var app = new Vue({
         },
 
         gotoLocation: function() {
+
+             // Extract lat and lon from gotoLatLon
             const [lat, lon] = (this.gotoLatLon || "").split(",").map(Number);
+
+        // Check for valid values and display pin point if valid
             if (Number.isFinite(lat) && Number.isFinite(lon)
                 && lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
-                map.setView([lat, lon], 16);
+                const marker = L.marker([lat, lon], { icon: L.icon({ iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png", shadowSize: [41, 41] }, { fillColor: "#ffff00", color: "#000" }) }).addTo(map)
+                map.setView([lat, lon], 14);
+            } else {
+                console.error("Invalid latitude and longitude provided.");
             }
+
+            // if (Number.isFinite(lat) && Number.isFinite(lon)
+            //     && lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
+            //     map.setView([lat, lon], 12);
+            // }
         },
 
         findH3: function() {
@@ -205,19 +217,29 @@ var app = new Vue({
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 minZoom: 5,
-                maxNativeZoom: 19,
-                maxZoom: 24,
+                maxNativeZoom: 15,
+                maxZoom: 17,
                 attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
             }).addTo(map);
             pointsLayer = L.layerGroup([]).addTo(map);
 
-            const initialLat = queryParams.lat ?? 0;
-            const initialLng = queryParams.lng ?? 0;
-            const initialZoom = queryParams.zoom ?? 5;
+            const initialLat = queryParams.lat ?? 19;
+            const initialLng = queryParams.lng ?? 72.8;
+            const initialZoom = queryParams.zoom ?? 13;
             map.setView([initialLat, initialLng], initialZoom);
             map.on("zoomend", this.updateMapDisplay);
             map.on("moveend", this.updateMapDisplay);
-
+            map.on("click", (e) => {
+                const { lat, lng } = e.latlng;
+        
+                // Round lat and lng to 4 decimal places
+                const roundedLat = lat.toFixed(4);
+                const roundedLng = lng.toFixed(4);
+        
+                this.gotoLatLon = `${roundedLat},${roundedLng}`; // Update gotoLatLon on map click
+                this.gotoLocation(); // Trigger gotoLocation to show pin point
+            });
+        
             const { h3 } = queryParams;
             console.log(h3)
             if (h3) {
@@ -229,3 +251,4 @@ var app = new Vue({
         });
     }
 });
+
