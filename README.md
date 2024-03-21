@@ -1,4 +1,4 @@
-# [Hex Map Navigator for Resolution 7 ]
+# Hex Map Navigator for Resolution 7
 
 This repository contains the JavaScript and HTML files for a web map.
 
